@@ -22,7 +22,7 @@ async def main():
 
     bot = Bot(token=settings.BOT_TOKEN.get_secret_value(), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     logging.info("bot started")
-    redis = Redis(db=5)
+    redis = Redis(host=settings.REDIS_HOST, db=settings.REDIS_DB)
     storage = RedisStorage(redis)
     dispatcher = Dispatcher(storage=storage, redis=redis)
     dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
