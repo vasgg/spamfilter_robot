@@ -1,0 +1,27 @@
+services:
+  redis:
+    image: 'redis:7.2-alpine'
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bot
+    depends_on:
+      - redis
+      - web-app
+  web-app:
+    build:
+      dockerfile_inline: |
+        FROM python:3.11-slim
+        WORKDIR /root
+        ADD webapp.py /root
+        RUN pip install --no-cache-dir fastapi uvicorn
+    command: |
+      bash -c "uvicorn webapp:app --host 0.0.0.0 --port 7777"
+
+volumes:
+  redisdata:
