@@ -1,14 +1,16 @@
 import contextlib
 import hashlib
+import logging
 import time
 
 from aiogram import exceptions, types
 import aiohttp
 from redis.asyncio import Redis
 
-from bot.handlers.base_handlers import logger
 from bot.internal.replies import answers
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 async def get_all_chat_ids_from_user(user_id: int, redis: Redis) -> list[int]:
