@@ -3,8 +3,6 @@ from logging.handlers import RotatingFileHandler
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from enums import Stage
-
 
 class Settings(BaseSettings):
     BOT_TOKEN: SecretStr
@@ -12,8 +10,7 @@ class Settings(BaseSettings):
     PERMANENT_BAN: bool
     BAN_TIME: int
     COOLDOWN_TIME: int
-    ADMIN: int
-    STAGE: Stage
+    WHITELIST: list[int]
     VALIDATOR_URL: str
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
