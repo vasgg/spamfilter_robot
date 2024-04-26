@@ -1,8 +1,6 @@
-import contextlib
 import logging
-import time
 
-from aiogram import Router, types
+from aiogram import F, Router, types
 from aiogram.filters import CommandStart
 from redis.asyncio import Redis
 
@@ -11,7 +9,6 @@ from bot.internal.replies import answers
 from config import settings
 
 router = Router()
-redis = Redis(db=5)
 logger = logging.getLogger(__name__)
 
 
@@ -24,9 +21,10 @@ async def start_message(
     )
 
 
-@router.message()
-async def handle_message(message: types.Message):
-    if message.from_user.id == settings.ADMIN:
+@router.message(F.text)
+async def handle_message(message: types.Message, redis: Redis) -> None:
+    if message.from_user.id in settings.WHITELIST:
+        logging.info('User in whitelist, ignoring...')
         return
 
     if message.from_user.full_name in ['Telegram', 'Channel', 'Group']:
@@ -38,16 +36,15 @@ async def handle_message(message: types.Message):
         key_message = f'user:{user_id}:messages'
         key_group = f'user:{user_id}:groups'
         user_text = message.text
-        with contextlib.suppress(AttributeError):
-            hash_text = hash_message(user_text)
+        hash_text = hash_message(user_text)
         banned = await check_spam(message)
 
         if banned:
-            await ban_process(message)
-        if hash_text:
-            if await redis.sismember(key_message, hash_text):
-                await ban_process(message)
-            else:
-                await redis.sadd(key_group, message.chat.id)
-                await redis.sadd(key_message, hash_text)
-                await redis.expire(key_message, settings.COOLDOWN_TIME)
+            await ban_process(message, redis)
+            return
+        if await redis.sismember(key_message, hash_text):
+            await ban_process(message, redis)
+        else:
+            await redis.sadd(key_group, message.chat.id)
+            await redis.sadd(key_message, hash_text)
+            await redis.expire(key_message, settings.COOLDOWN_TIME)
