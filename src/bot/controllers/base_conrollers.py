@@ -63,13 +63,13 @@ async def ban_process(message, redis: Redis):
             await message.delete()
             chats = await get_all_chat_ids_from_user(message.from_user.id, redis)
             for chat_id in chats:
-                with contextlib.suppress(exceptions.TelegramBadRequest):
-                    await message.bot.restrict_chat_member(chat_id=chat_id,
-                                                           user_id=message.from_user.id,
-                                                           permissions=permissions,
-                                                           until_date=until_date)
+                await message.bot.restrict_chat_member(chat_id=chat_id,
+                                                       user_id=message.from_user.id,
+                                                       permissions=permissions,
+                                                       until_date=until_date)
             await message.bot.send_message(settings.REPORTS_CHAT_ID, ban_report_text)
         except exceptions.TelegramMigrateToChat:
-            await message.bot.send_message(settings.REPORTS_CHAT_ID, 'group chat was upgraded to a supergroup chat, '
-                                                                     'change REPORTS_CHAT_ID in .env file')
+            pass
+            # await message.bot.send_message(settings.REPORTS_CHAT_ID, 'group chat was upgraded to a supergroup chat, '
+            #                                                          'change REPORTS_CHAT_ID in .env file')
     logger.info(ban_report_text)
