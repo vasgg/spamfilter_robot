@@ -39,7 +39,6 @@ def hash_message(message: str) -> str:
 async def ban_process(message, redis: Redis):
     current_time = int(time.time())
     until_date = current_time + settings.BAN_TIME if not settings.PERMANENT_BAN else None
-    banned_text = answers['banned_text']
     ban_time_text = answers['forever'] if settings.PERMANENT_BAN else answers['ban_time'].format(settings.BAN_TIME)
     ban_report_text = answers['ban_report_text'].format(message.from_user.full_name, message.chat.title, ban_time_text, message.text)
     permissions = types.ChatPermissions(
@@ -57,19 +56,17 @@ async def ban_process(message, redis: Redis):
         can_pin_messages=False,
         can_manage_topics=False,
     )
-    with contextlib.suppress(exceptions.TelegramBadRequest):
-        try:
-            await message.bot.send_message(message.from_user.id, banned_text + ban_time_text)
-            await message.delete()
-            chats = await get_all_chat_ids_from_user(message.from_user.id, redis)
-            for chat_id in chats:
-                await message.bot.restrict_chat_member(chat_id=chat_id,
-                                                       user_id=message.from_user.id,
-                                                       permissions=permissions,
-                                                       until_date=until_date)
-            await message.bot.send_message(settings.REPORTS_CHAT_ID, ban_report_text)
-        except exceptions.TelegramMigrateToChat:
-            pass
-            # await message.bot.send_message(settings.REPORTS_CHAT_ID, 'group chat was upgraded to a supergroup chat, '
-            #                                                          'change REPORTS_CHAT_ID in .env file')
+    await message.delete()
+    chats = await get_all_chat_ids_from_user(message.from_user.id, redis)
+    for chat_id in chats:
+        with contextlib.suppress(exceptions.TelegramBadRequest):
+            await message.bot.restrict_chat_member(chat_id=chat_id,
+                                                   user_id=message.from_user.id,
+                                                   permissions=permissions,
+                                                   until_date=until_date)
+    try:
+        await message.bot.send_message(settings.REPORTS_CHAT_ID, ban_report_text)
+    except exceptions.TelegramMigrateToChat:
+        await message.bot.send_message(settings.REPORTS_CHAT_ID, 'group chat was upgraded to a supergroup chat, '
+                                                                 'change REPORTS_CHAT_ID in .env file')
     logger.info(ban_report_text)
