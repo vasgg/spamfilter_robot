@@ -14,6 +14,12 @@ class Settings(BaseSettings):
     VALIDATOR_URL: str
     REDIS_HOST: str
     REDIS_DB: int
+    VALIDATOR_USER: str
+    VALIDATOR_PASS: SecretStr
+
+    @property
+    def validator_header(self):
+        return f'Basic {self.VALIDATOR_USER} {self.VALIDATOR_PASS.get_secret_value()}'
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 

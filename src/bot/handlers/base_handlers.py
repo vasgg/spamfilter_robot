@@ -37,14 +37,13 @@ async def handle_message(message: types.Message, redis: Redis) -> None:
         key_group = f'user:{user_id}:groups'
         user_text = message.text
         hash_text = hash_message(user_text)
-        banned = await check_spam(message)
+        redis_spam_result = await redis.sismember(key_message, hash_text)
+        spam_check_result = await check_spam(user_text, message.from_user.id, message.from_user.username)
 
-        if banned:
+        if redis_spam_result or spam_check_result:
             await ban_process(message, redis)
             return
-        if await redis.sismember(key_message, hash_text):
-            await ban_process(message, redis)
-        else:
-            await redis.sadd(key_group, message.chat.id)
-            await redis.sadd(key_message, hash_text)
-            await redis.expire(key_message, settings.COOLDOWN_TIME)
+
+        await redis.sadd(key_group, message.chat.id)
+        await redis.sadd(key_message, hash_text)
+        await redis.expire(key_message, settings.COOLDOWN_TIME)

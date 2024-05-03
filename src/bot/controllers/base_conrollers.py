@@ -20,23 +20,26 @@ async def get_all_chat_ids_from_user(user_id: int, redis: Redis) -> list[int]:
     return chat_ids
 
 
-async def check_spam(message: types.Message) -> bool:
-    data = message.model_dump_json(exclude_unset=True)
-    headers = {'Content-Type': 'application/json'}
+async def check_spam(message_text: str, user_id: int, username: str | None) -> bool:
+    data = {
+        "msg": message_text,
+        'user_id':  user_id,
+        'user_name': username or ''
+    }
+    headers = {'Content-Type': 'application/json',
+               'Authorization': settings.validator_header}
     async with aiohttp.ClientSession() as session:
         async with session.post(settings.VALIDATOR_URL, data=data, headers=headers) as response:
-            if response.status == 200:
-                json_response = await response.json()
-                return json_response.get('result', False)
-            else:
-                raise AssertionError(f'Failed to validate message. Status code: {response.status}')
+            response.raise_for_status()
+            json_response = await response.json()
+            return json_response.get('spam', False)
 
 
 def hash_message(message: str) -> str:
     return hashlib.sha256(message.encode()).hexdigest()
 
 
-async def ban_process(message, redis: Redis):
+async def ban_process(message: types.Message, redis: Redis):
     current_time = int(time.time())
     until_date = current_time + settings.BAN_TIME if not settings.PERMANENT_BAN else None
     ban_time_text = answers['forever'] if settings.PERMANENT_BAN else answers['ban_time'].format(settings.BAN_TIME)
@@ -56,6 +59,7 @@ async def ban_process(message, redis: Redis):
         can_pin_messages=False,
         can_manage_topics=False,
     )
+    await message.bot.send_message(message.chat.id, ban_report_text)
     await message.delete()
     chats = await get_all_chat_ids_from_user(message.from_user.id, redis)
     for chat_id in chats:
