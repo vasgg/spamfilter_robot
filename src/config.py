@@ -1,3 +1,4 @@
+import base64
 from logging.handlers import RotatingFileHandler
 
 from pydantic import SecretStr
@@ -19,7 +20,9 @@ class Settings(BaseSettings):
 
     @property
     def validator_header(self):
-        return f'Basic {self.VALIDATOR_USER} {self.VALIDATOR_PASS.get_secret_value()}'
+        plain_auth = f"{self.VALIDATOR_USER}:{self.VALIDATOR_PASS.get_secret_value()}"
+        base64_auth = base64.encodebytes(plain_auth.encode('utf-8'))
+        return f'Basic {base64_auth}'
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 
