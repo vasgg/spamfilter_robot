@@ -29,7 +29,7 @@ async def check_spam(message_text: str, user_id: int, username: str | None) -> b
     headers = {'Content-Type': 'application/json',
                'Authorization': settings.validator_header}
     async with aiohttp.ClientSession() as session:
-        async with session.post(settings.VALIDATOR_URL, data=data, headers=headers) as response:
+        async with session.post(settings.VALIDATOR_URL, json=data, headers=headers) as response:
             response.raise_for_status()
             json_response = await response.json()
             return json_response.get('spam', False)
