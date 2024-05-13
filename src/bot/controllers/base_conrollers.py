@@ -24,7 +24,7 @@ async def get_all_chat_ids_from_user(user_id: int, redis: Redis) -> list[int]:
 async def check_spam(message_text: str, user_id: int, username: str | None) -> bool:
     data = {
         "msg": message_text,
-        'user_id':  user_id,
+        'user_id':  str(user_id),
         'user_name': username or ''
     }
     headers = {'Content-Type': 'application/json',

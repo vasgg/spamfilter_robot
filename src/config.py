@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     @property
     def validator_header(self):
         plain_auth = f"{self.VALIDATOR_USER}:{self.VALIDATOR_PASS.get_secret_value()}"
-        base64_auth = base64.encodebytes(plain_auth.encode('utf-8'))
-        return f'Basic {base64_auth}'
+        base64_auth = base64.encodebytes(plain_auth.encode('utf-8')).decode('utf-8')
+        return f'Basic {base64_auth.strip()}'
 
     model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 

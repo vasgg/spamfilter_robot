@@ -24,3 +24,12 @@ async def test_check_spam():
         res = await check_spam(msg_text, user_id, username)
 
     assert res is True
+
+
+@pytest.mark.asyncio
+async def test_check_spam():
+    msg_text = "abacaba"
+    user_id = 100500
+    username = "some_user_name"
+    res = await check_spam(msg_text, user_id, username)
+    print(res)
