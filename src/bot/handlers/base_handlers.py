@@ -4,7 +4,7 @@ from aiogram import F, Router, types
 from aiogram.filters import CommandStart
 from redis.asyncio import Redis
 
-from bot.controllers.base_conrollers import ban_process, check_spam, hash_message
+from bot.controllers.base_conrollers import ban_process, check_spam, hash_message, is_user_admin
 from bot.internal.replies import answers
 from config import settings
 
@@ -23,8 +23,8 @@ async def start_message(
 
 @router.message(F.text)
 async def handle_message(message: types.Message, redis: Redis) -> None:
-    if message.from_user.id in settings.WHITELIST:
-        logging.info('User in whitelist, ignoring...')
+    if message.from_user.id in settings.WHITELIST or await is_user_admin(message.bot, message.chat.id, message.from_user.id):
+        logging.info('User is group admin or in whitelist, ignoring...')
         return
 
     if message.from_user.full_name in ['Telegram', 'Channel', 'Group']:

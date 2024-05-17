@@ -3,7 +3,8 @@ import hashlib
 import logging
 import time
 
-from aiogram import exceptions, types
+from aiogram import Bot, exceptions, types
+from aiogram.exceptions import TelegramAPIError
 import aiohttp
 from redis.asyncio import Redis
 
@@ -74,3 +75,12 @@ async def ban_process(message: types.Message, redis: Redis):
         await message.bot.send_message(settings.REPORTS_CHAT_ID, 'group chat was upgraded to a supergroup chat, '
                                                                  'change REPORTS_CHAT_ID in .env file')
     logger.info(ban_report_text)
+
+
+async def is_user_admin(bot: Bot, chat_id: int, user_id: int) -> bool:
+    try:
+        chat_administrators = await bot.get_chat_administrators(chat_id)
+        return any(admin.user.id == user_id for admin in chat_administrators)
+    except TelegramAPIError:
+        logging.exception(f"Error checking if user is admin")
+        return False
